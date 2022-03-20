@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+
+        body{
+            background-color: gray;
+            position: relative;
+            display: flex;
+            height: 100vh;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+
+        .canvas-container{
+            flex: 0.6666;
+            display: flex;
+            justify-content: center;
+        }
+
+        canvas{
+            height: 100%;
+        }
+
+        #params{
+            padding: 10px;
+            flex: 0.3333;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start;
+        }
+
+        #params > fieldset{
+            margin: 5px;
+            width: calc(33% - 20px);
+        }
+
+        #params > fieldset > *{
+            margin: 5px;
+        }
+
+        fieldset{
+            display: flex;
+            flex-direction: column;
+        }
+
+        span{
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="canvas-container">
+        <canvas></canvas>
+    </div>
+    <aside id="params"></aside>
+    <script type="module" src="./script/index.js"></script>
+</body>
+</html>

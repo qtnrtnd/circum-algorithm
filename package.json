@@ -1,0 +1,20 @@
+{
+  "name": "logo-algo",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "serve": "rimraf temp && parcel src/index.html --dist-dir temp",
+    "build": "rimraf dist && parcel build src/index.html --public-url ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@parcel/transformer-sass": "^2.3.2",
+    "browserify-zlib": "^0.2.0",
+    "parcel": "^2.3.2",
+    "postcss-plugin": "^1.0.0",
+    "postcss-preset-env": "^7.4.1",
+    "rimraf": "^3.0.2"
+  }
+}
