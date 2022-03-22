@@ -66,7 +66,6 @@ const getControlPoints = function (pBefore, pCurrent, pAfter, circleOrigin, dist
 
 const getPoints = function (rayon, pointsNumber, randomPointsInterval, circlesRotationVariation, params) {
 
-
     let step = 360 / pointsNumber;
 
     let originFromCenter = (params.biggestCircleScale.value / 2 - rayon) * params.distanceFromCenter.value;

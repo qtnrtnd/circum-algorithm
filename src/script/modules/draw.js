@@ -12,9 +12,9 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
         _.ctx.fillRect(0, 0, _.canvas.width, _.canvas.height);
     }
 
-    const circlesRadius = getCirclesRadius(params);
-
     const pointsPerCircle = getPointsNumber(params);
+
+    const circlesRadius = getCirclesRadius(params, pointsPerCircle);
 
     let newRandomPointsInterval = params.randomizePointsInterval.value && (generateNewSeed.pointsInterval || !params.pointsIntervalRandomizationSeed.value);
 
