@@ -5,6 +5,6 @@ import { draw } from "./modules/draw";
 generateUI(params);
 
 requestAnimationFrame(() => {
-    draw(params)
+    draw(params);
 });
 

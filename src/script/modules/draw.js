@@ -12,24 +12,37 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
         _.ctx.fillRect(0, 0, _.canvas.width, _.canvas.height);
     }
 
-    const pointsPerCircle = getPointsNumber(params);
+    const circlesRadius = getCirclesRadius(params);
 
-    const circlesRadius = getCirclesRadius(params, pointsPerCircle);
+    const pointsPerCircle = getPointsNumber(params, circlesRadius);
 
-    let newRandomPointsInterval = params.randomizePointsInterval.value && (generateNewSeed.pointsInterval || !params.pointsIntervalRandomizationSeed.value);
+    let newRandomPointsInterval = generateNewSeed.pointsInterval || (params.randomizePointsInterval.value && !params.pointsIntervalRandomizationSeed.value);
 
     if (newRandomPointsInterval) {
         
         let arr = [];
 
         for (let i = 0; i < params.iterations.value; i++) {
-            arr.push(Array.apply(null, Array(pointsPerCircle[i])).map(() => -0.5 + Math.random()))
+            arr.push(Array.apply(null, Array(pointsPerCircle[i])).map(() => -1 + 2 * Math.random()))
         }
 
         params.pointsIntervalRandomizationSeed.value = arr;
     }
 
-    let newCirclesRotation = params.circlesRotationVariationType.value && (generateNewSeed.circlesRotation || !params.circlesRotationVariationSeed.value);
+    let newRandomPointsHeight = generateNewSeed.pointsHeight || (params.randomizePointsHeight.value && !params.pointsHeightRandomizationSeed.value);
+
+    if (newRandomPointsHeight) {
+        
+        let arr = [];
+
+        for (let i = 0; i < params.iterations.value; i++) {
+            arr.push(Array.apply(null, Array(pointsPerCircle[i])).map(() => -1 + 2 * Math.random()))
+        }
+
+        params.pointsHeightRandomizationSeed.value = arr;
+    }
+
+    let newCirclesRotation = generateNewSeed.circlesRotation || (params.circlesRotationVariationType.value && !params.circlesRotationVariationSeed.value);
 
     if (newCirclesRotation) {
 
@@ -55,15 +68,7 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
 
     circlesRadius.forEach((circleRadius, i) => {
 
-        let randomPointsInterval = params.pointsIntervalRandomizationSeed.value;
-
-        if (Array.isArray(randomPointsInterval)) randomPointsInterval = randomPointsInterval[i];
-
-        let circlesRotationVariation = params.circlesRotationVariationSeed.value;
-
-        if (Array.isArray(circlesRotationVariation)) circlesRotationVariation = circlesRotationVariation[i];
-
-        let points = getPoints(circleRadius, pointsPerCircle[i], randomPointsInterval, circlesRotationVariation, params);
+        let points = getPoints(circleRadius, pointsPerCircle[i], params.pointsIntervalRandomizationSeed.value[i], params.pointsHeightRandomizationSeed.value[i], params.circlesRotationVariationSeed.value[i], params);
 
         _.ctx.beginPath();
         
@@ -91,28 +96,31 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
         }
         _.ctx.stroke();
 
-        /*points.forEach((point, i) => {
+        points.forEach((point, i) => {
 
-            _.ctx.beginPath();
-            _.ctx.fillStyle = "green"
-            _.ctx.arc(point.x, point.y, 2, 0, 180);
-            _.ctx.fill();
+            if (point.color === "red") {
+                _.ctx.beginPath();
+                _.ctx.fillStyle = point.color;
+                _.ctx.arc(point.x, point.y, 2, 0, 180);
+                _.ctx.fill();
 
-            _.ctx.beginPath();
-            _.ctx.fillStyle = "blue"
-            _.ctx.arc(point.cpl.x, point.cpl.y, 2, 0, 180);
-            _.ctx.fill();
+                _.ctx.beginPath();
+                _.ctx.fillStyle = "blue"
+                _.ctx.arc(point.cpl.x, point.cpl.y, 2, 0, 180);
+                _.ctx.fill();
 
-            _.ctx.beginPath();
-            _.ctx.fillStyle = "blue"
-            _.ctx.arc(point.cpr.x, point.cpr.y, 2, 0, 180);
-            _.ctx.fill();
+                _.ctx.beginPath();
+                _.ctx.fillStyle = "blue"
+                _.ctx.arc(point.cpr.x, point.cpr.y, 2, 0, 180);
+                _.ctx.fill();
+                
+                _.ctx.beginPath();
+                _.ctx.moveTo(point.cpl.x, point.cpl.y);
+                _.ctx.lineTo(point.cpr.x, point.cpr.y);
+                _.ctx.stroke()
+            }
             
-            _.ctx.beginPath();
-            _.ctx.moveTo(point.cpl.x, point.cpl.y);
-            _.ctx.lineTo(point.cpr.x, point.cpr.y);
-            _.ctx.stroke()
-        })*/
+        })
     })
     
 };

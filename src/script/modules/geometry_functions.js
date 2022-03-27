@@ -4,7 +4,7 @@ const dist = function (p1, p2) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2))
 }
 
-const offsetPointOnAxis = function (pRef1, pRef2, pTarget, circleOrigin, offset = 0, dir = "right") {
+const offsetPointOnAxis = function (pRef1, pRef2, pTarget, offset = 0, useYasInput = false) {
     
     let na = pRef1.x > pRef2.x ? pRef1.x - pRef2.x : pRef2.x - pRef1.x;
     na = na === 0 ? 1 : na;
@@ -14,28 +14,15 @@ const offsetPointOnAxis = function (pRef1, pRef2, pTarget, circleOrigin, offset 
 
     let x, y;
 
-    let DXgreaterThanDY = Math.max(pRef1.x, pRef2.x) - Math.min(pRef1.x, pRef2.x) > Math.max(pRef1.y, pRef2.y) - Math.min(pRef1.y, pRef2.y);
 
-    if (DXgreaterThanDY) {
+    if (!useYasInput) {
 
-        if (pTarget.y > circleOrigin.y) {
-            dir = dir === "right" ? -1 : (dir === "left" ? 1 : 0);
-        } else {
-            dir = dir === "right" ? 1 : (dir === "left" ? -1 : 0);
-        }
-
-        x = pTarget.x + dir * offset;
+        x = pTarget.x + offset;
         y = a * x + b
 
     } else {
 
-        if (pTarget.x > circleOrigin.x) {
-            dir = dir === "right" ? 1 : (dir === "left" ? -1 : 0);
-        } else {
-            dir = dir === "right" ? -1 : (dir === "left" ? 1 : 0);
-        }
-
-        y = pTarget.y + dir * offset;
+        y = pTarget.y + offset;
         x = (y - b) / a
     }
 
@@ -43,9 +30,7 @@ const offsetPointOnAxis = function (pRef1, pRef2, pTarget, circleOrigin, offset 
 
 }
 
-const getControlPoints = function (pBefore, pCurrent, pAfter, circleOrigin, distFromCurrentFactor = params.smoothness.initial) {
-
-    distFromCurrentFactor = Math.max(0, Math.min(distFromCurrentFactor, 1));
+const getControlPoints = function (pBefore, pCurrent, pAfter, distFromCurrentFactor = params.smoothness.initial) {
 
     let beforeToCurrentMid = { x: (pBefore.x + pCurrent.x) / 2, y: (pBefore.y + pCurrent.y) / 2 };
 
@@ -56,19 +41,42 @@ const getControlPoints = function (pBefore, pCurrent, pAfter, circleOrigin, dist
     let beforeToCurrentDist = dist(beforeToCurrentMid, newCurrent);
     let currentToAfterDist = dist(newCurrent, currentToAfterMid);
 
-    let cpl = offsetPointOnAxis(beforeToCurrentMid, currentToAfterMid, newCurrent, circleOrigin, beforeToCurrentDist * 0.552 * distFromCurrentFactor, "left");
+    let DXgreaterThanDYBefore = Math.max(beforeToCurrentMid.x, newCurrent.x) - Math.min(beforeToCurrentMid.x, newCurrent.x) >= Math.max(beforeToCurrentMid.y, newCurrent.y) - Math.min(beforeToCurrentMid.y, newCurrent.y);
 
-    let cpr = offsetPointOnAxis(beforeToCurrentMid, currentToAfterMid, newCurrent, circleOrigin, currentToAfterDist * 0.552 * distFromCurrentFactor, "right");
+    let DXgreaterThanDYAfter = Math.max(currentToAfterMid.x, newCurrent.x) - Math.min(currentToAfterMid.x, newCurrent.x) >= Math.max(currentToAfterMid.y, newCurrent.y) - Math.min(currentToAfterMid.y, newCurrent.y);
 
-    return { cpl, cpr, x: newCurrent.x , y: newCurrent.y };
+    let dirBefore, dirAfter;
+
+    if (DXgreaterThanDYBefore) {
+        dirBefore = beforeToCurrentMid.x < newCurrent.x ? 1 : -1;
+    } else {
+        dirBefore = beforeToCurrentMid.y < newCurrent.y ? 1 : -1;
+    }
+
+    if (DXgreaterThanDYAfter) {
+        dirAfter = currentToAfterMid.x > newCurrent.x ? 1 : -1;
+    } else {
+        dirAfter = currentToAfterMid.y > newCurrent.y ? 1 : -1;
+    }
+
+    let cpl = offsetPointOnAxis(beforeToCurrentMid, currentToAfterMid, newCurrent, -dirBefore * beforeToCurrentDist * 0.552 * distFromCurrentFactor, !DXgreaterThanDYBefore);
+
+    let cpr = offsetPointOnAxis(beforeToCurrentMid, currentToAfterMid, newCurrent, dirAfter * currentToAfterDist * 0.552 * distFromCurrentFactor, !DXgreaterThanDYAfter);
+
+    return { cpl, cpr, x: newCurrent.x , y: newCurrent.y};
 
 }
 
-const getPoints = function (rayon, pointsNumber, randomPointsInterval, circlesRotationVariation, params) {
+const getPoints = function (radius, pointsNumber, randomPointsInterval, randomPointsHeight, circlesRotationVariation, params) {
 
+    if (params.adaptativePointsPerCircle.value && pointsNumber !== randomPointsInterval.length) {
+        pointsNumber = randomPointsInterval.length;
+        //console.log("!")
+    }
+    
     let step = 360 / pointsNumber;
 
-    let originFromCenter = (params.biggestCircleScale.value / 2 - rayon) * params.distanceFromCenter.value;
+    let originFromCenter = (params.biggestCircleScale.value / 2 - radius) * params.distanceFromCenter.value;
     let originX = _.canvas.width / 2 + (originFromCenter * Math.cos(params.originRotate.value * Math.PI / 180));
     let originY = _.canvas.height / 2 + (originFromCenter * Math.sin(params.originRotate.value * Math.PI / 180));
 
@@ -76,12 +84,14 @@ const getPoints = function (rayon, pointsNumber, randomPointsInterval, circlesRo
 
     for (let i = 0; i < pointsNumber; i++){
 
-        let offset = (params.randomizePointsInterval.value ? step * (randomPointsInterval ? randomPointsInterval[i] : 0) * params.pointsIntervalRandomizationFactor.value : 0) + (params.circlesRotationVariationType.value ? (params.circlesRotationVariationType.value === "randomization" ? step : 360) * (circlesRotationVariation ? circlesRotationVariation : 0) * params.circlesRotationVariationFactor.value : 0);
+        let rotateOffset = (params.randomizePointsInterval.value ? step / 2 * (randomPointsInterval ? randomPointsInterval[i] : 0) * params.pointsIntervalRandomizationFactor.value : 0) + (params.circlesRotationVariationType.value ? 360 * (circlesRotationVariation ? circlesRotationVariation : 0) * params.circlesRotationVariationFactor.value : 0);
+        
+        let distOffset = params.randomizePointsHeight.value ? (randomPointsHeight ? randomPointsHeight[i] : 0) * radius * params.pointsIHeightRandomizationFactor.value : 0;
 
-        let x = originX + rayon * Math.cos((i * step + offset) * Math.PI / 180);
-        let y = originY + rayon * Math.sin((i * step + offset) * Math.PI / 180);
+        let x = originX + (radius + distOffset) * Math.cos((i * step + rotateOffset) * Math.PI / 180);
+        let y = originY + (radius + distOffset) * Math.sin((i * step + rotateOffset) * Math.PI / 180);
 
-        points.push({ x: x, y: y });
+        points.push({ x: x, y: y, angle: i * step });
         
     }
 
@@ -91,7 +101,7 @@ const getPoints = function (rayon, pointsNumber, randomPointsInterval, circlesRo
 
         let pointAfter = i < points.length - 1 ? points[i + 1] : points[0];
 
-        pointsWithCp.push(getControlPoints(pointBefore, point, pointAfter, {x: originX, y: originY}, params.smoothness.value));
+        pointsWithCp.push(getControlPoints(pointBefore, point, pointAfter, params.smoothness.value));
     });
 
     return pointsWithCp;
@@ -101,7 +111,7 @@ const getCirclesRadius = function (params) {
 
     let number = params.iterations.value;
 
-    let step = 1 / Math.max((number - 1), 1);
+    let step = 1 / Math.max(number - 1, 1);
 
     let radius = [];
 
@@ -121,12 +131,25 @@ const getCirclesRadius = function (params) {
     return radius;
 }
 
-const getPointsNumber = function (params) {
+const getPointsNumber = function (params, circleRadius) {
 
-    let arr = []
+    let arr = [];
+    const biggestCircleScale = params.biggestCircleScale.value / 2;
+    const maxPointsPerCircle = params.pointsPerCircle.value;
 
-    for (let i = 0; i < params.iterations.value; i++){
-        arr.push(params.pointsPerCircle.value);
+    for (let i = 0; i < circleRadius.length; i++){
+
+        let value;
+
+        if (params.adaptativePointsPerCircle.value) {
+           
+            value = Math.floor(params.pointsPerCircle.min + (circleRadius[i] / biggestCircleScale) * (maxPointsPerCircle - params.pointsPerCircle.min));
+
+        } else {
+            value = maxPointsPerCircle;
+        }
+
+        arr.push(value);
     }
 
     return arr;

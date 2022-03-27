@@ -14,7 +14,10 @@ const inputHandler = function (e) {
 
         let seedParam;
 
-        if (param === "pointsPerCircle") {
+        if (param === "pointsPerCircle"
+            || param === "adaptativePointsPerCircle"
+            || ((param === "tension" || param === "smallestCircleScale") && params.adaptativePointsPerCircle.value))
+        {
             seedParam = { pointsInterval: true, pointsHeight: true };
         } else if (param === "iterations") {
             seedParam = { pointsInterval: true, pointsHeight: true, circlesRotation: true };

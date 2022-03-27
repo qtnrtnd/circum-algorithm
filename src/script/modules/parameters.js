@@ -32,9 +32,9 @@ params = {
     },
     biggestCircleScale: {
         type: "range",
-        initial: 0.9,
+        initial: 0.85,
         min: 0,
-        max: 2,
+        max: 4,
         step: 0.01,
         get value() {
             return this.computedValue;
@@ -91,15 +91,15 @@ params = {
         }
     },
     iterations: {
-        type: "range",
-        initial: 25,
+        type: "number",
+        initial: 20,
         min: 1,
-        max: 200,
+        step: 1,
         get value() {
             return this.computedValue;
         },
         set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
+            this.computedValue = this.inputValue = Math.max(v, this.min);
         }
     },
     tension: {
@@ -128,16 +128,41 @@ params = {
         }
     },
     pointsPerCircle: {
-        type: "range",
+        group: "pointsPerCircle",
+        type: "number",
         initial: 20,
         min: 4,
-        max: 80,
         step: 1,
         get value() {
             return this.computedValue;
         },
         set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
+            this.computedValue = this.inputValue = Math.max(v, this.min);
+        }
+    },
+    adaptativePointsPerCircle: {
+        group: "pointsPerCircle",
+        label: "adaptative",
+        type: "select",
+        listOfValues: [
+            {value: true, text: "true"},
+            {value: false, text: "false", selected: true},
+        ],
+        initial: false,
+        get value() {
+            return this.computedValue;
+        },
+        set value(v) {
+
+            let value;
+
+            try {
+                value = JSON.parse(v);
+            } catch {
+                value = v;
+            }
+
+            this.computedValue = this.inputValue = value;
         }
     },
     smoothness: {
@@ -210,6 +235,63 @@ params = {
             });
         }
     },
+    randomizePointsHeight: {
+        group: "randomizePointsHeight",
+        type: "select",
+        listOfValues: [
+            {value: true, text: "true"},
+            {value: false, text: "false", selected: true},
+        ],
+        initial: false,
+        get value() {
+            return this.computedValue;
+        },
+        set value(v) {
+
+            let value;
+
+            try {
+                value = JSON.parse(v);
+            } catch {
+                value = v;
+            }
+
+            this.computedValue = this.inputValue = value;
+        }
+    },
+    pointsIHeightRandomizationFactor: {
+        group: "randomizePointsHeight",
+        type: "range",
+        label: "randomizationFactor",
+        initial: 0,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        get value() {
+            return this.computedValue;
+        },
+        set value(v) {
+            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
+        }
+    },
+    pointsHeightRandomizationSeed: {
+        group: "randomizePointsHeight",
+        type: "button",
+        text: "seed",
+        initial: false,
+        get value() {
+            return this.computedValue;
+        },
+        set value(v) {
+            this.computedValue = v;
+        },
+        onClick: function () {
+     
+            requestAnimationFrame(() => {
+                draw(params, {pointsHeight: true});
+            });
+        }
+    },
     circlesRotationVariationType: {
         group: "circlesRotationVariation",
         label: "type",
@@ -277,9 +359,9 @@ params = {
     },
     strokeWidth: {
         type: "number",
-        initial: 1,
-        min: 2,
+        initial: 2,
         max: 100,
+        min: 0,
         step: 0.01,
         get value() {
             return this.computedValue;
