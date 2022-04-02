@@ -71,7 +71,6 @@ const getPoints = function (radius, pointsNumber, randomPointsInterval, randomPo
 
     if (params.adaptativePointsPerCircle.value && pointsNumber !== randomPointsInterval.length) {
         pointsNumber = randomPointsInterval.length;
-        //console.log("!")
     }
     
     let step = 360 / pointsNumber;
@@ -86,7 +85,7 @@ const getPoints = function (radius, pointsNumber, randomPointsInterval, randomPo
 
         let rotateOffset = (params.randomizePointsInterval.value ? step / 2 * (randomPointsInterval ? randomPointsInterval[i] : 0) * params.pointsIntervalRandomizationFactor.value : 0) + (params.circlesRotationVariationType.value ? 360 * (circlesRotationVariation ? circlesRotationVariation : 0) * params.circlesRotationVariationFactor.value : 0);
         
-        let distOffset = params.randomizePointsHeight.value ? (randomPointsHeight ? randomPointsHeight[i] : 0) * radius * params.pointsIHeightRandomizationFactor.value : 0;
+        let distOffset = params.randomizePointsHeight.value ? (randomPointsHeight ? randomPointsHeight[i] : 0) * radius * params.pointsHeightRandomizationFactor.value : 0;
 
         let x = originX + (radius + distOffset) * Math.cos((i * step + rotateOffset) * Math.PI / 180);
         let y = originY + (radius + distOffset) * Math.sin((i * step + rotateOffset) * Math.PI / 180);

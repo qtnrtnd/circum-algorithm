@@ -185,6 +185,10 @@ params = {
             {value: true, text: "true"},
             {value: false, text: "false", selected: true},
         ],
+        disableInputsForValue: {
+            "false": "*"
+            
+        },
         initial: false,
         get value() {
             return this.computedValue;
@@ -235,13 +239,21 @@ params = {
             });
         }
     },
-    randomizePointsHeight: {
-        group: "randomizePointsHeight",
+    linkPointsIntervalRandomizationFactorToTension: {
+        group: "randomizePointsInterval",
         type: "select",
+        label: "linkToTension",
         listOfValues: [
             {value: true, text: "true"},
             {value: false, text: "false", selected: true},
         ],
+        disableInputsForValue: {
+            "false": [
+                "linkPointsIntervalRandomizationFactorToTensionMinFactor",
+                "linkPointsIntervalRandomizationFactorToTensionMaxFactor"
+            ]
+            
+        },
         initial: false,
         get value() {
             return this.computedValue;
@@ -259,7 +271,64 @@ params = {
             this.computedValue = this.inputValue = value;
         }
     },
-    pointsIHeightRandomizationFactor: {
+    linkPointsIntervalRandomizationFactorToTensionMinFactor: {
+        group: "randomizePointsInterval",
+        type: "range",
+        label: "min",
+        initial: 0,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        get value() {
+            return this.computedValue;
+        },
+        set value(v) {
+            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
+        }
+    },
+    linkPointsIntervalRandomizationFactorToTensionMaxFactor: {
+        group: "randomizePointsInterval",
+        type: "range",
+        label: "max",
+        initial: 1,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        get value() {
+            return this.computedValue;
+        },
+        set value(v) {
+            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
+        }
+    },
+    randomizePointsHeight: {
+        group: "randomizePointsHeight",
+        type: "select",
+        listOfValues: [
+            {value: true, text: "true"},
+            {value: false, text: "false", selected: true},
+        ],
+        disableInputsForValue: {
+            "false": "*"
+        },
+        initial: false,
+        get value() {
+            return this.computedValue;
+        },
+        set value(v) {
+
+            let value;
+
+            try {
+                value = JSON.parse(v);
+            } catch {
+                value = v;
+            }
+
+            this.computedValue = this.inputValue = value;
+        }
+    },
+    pointsHeightRandomizationFactor: {
         group: "randomizePointsHeight",
         type: "range",
         label: "randomizationFactor",
@@ -301,6 +370,12 @@ params = {
             {value: "randomization", text: "randomization"},
             {value: "progression", text: "progression"},
         ],
+        disableInputsForValue: {
+            "false": "*",
+            "progression": [
+                "circlesRotationVariationSeed"
+            ]
+        },
         initial: false,
         get value() {
             return this.computedValue;

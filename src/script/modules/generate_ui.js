@@ -3,26 +3,85 @@ import { camelCaseToSpan } from "./utils";
 import { params } from "./parameters";
 import { draw } from "./draw";
 
+const disableInputsAccordingToSelectedValues = function (params, inputParamName) {
+
+    const inputParam = params[inputParamName];
+    const groupName = inputParam.group;
+
+    if (inputParam.hasOwnProperty('group')) {
+
+        const selects = document.querySelectorAll('.' + groupName + " select");
+        const finalInputsState = {};
+
+        selects.forEach(select => {
+
+            const param = params[select.getAttribute("data-var")];
+
+            if (param.hasOwnProperty('disableInputsForValue')) {
+
+                const value = param.value.toString();
+
+                document.querySelectorAll("." + groupName + " [data-var]:not([data-var='" + param.paramName + "'])").forEach(input => {
+
+                    let name = input.getAttribute("data-var");
+                    let newState = true;
+
+                    if (param.disableInputsForValue.hasOwnProperty(value) && (param.disableInputsForValue[value].includes(name) || param.disableInputsForValue[value] === "*")) {
+                        newState = false;
+                    }
+                        
+                    finalInputsState[name] = finalInputsState.hasOwnProperty(name) ? finalInputsState[name] && newState : newState;
+
+                });
+                
+            }
+            
+        });
+
+        for (let name in finalInputsState) {
+
+            const input = document.querySelector("[data-var='" + name + "']");
+
+            input.disabled = !finalInputsState[name];
+        
+            if (!input.parentElement.classList.contains(groupName)) {
+
+                const label = input.parentElement.querySelector('legend');
+                
+                if (label) {
+                    finalInputsState[name] ? label.classList.remove('disabled') : label.classList.add('disabled');
+                }
+
+            }
+        }
+        
+    }
+
+    
+}
+
 const inputHandler = function (e) {
 
-    let param = e.target.getAttribute("data-var");
+    let paramName = e.target.getAttribute("data-var");
+    let param = params[paramName];
     let newValue = e.target.value;
 
-    params[param].value = newValue;
+    param.value = newValue;
+
+    disableInputsAccordingToSelectedValues(params, paramName);
+
+    let seedParam;
+
+    if (paramName === "pointsPerCircle"
+        || paramName === "adaptativePointsPerCircle"
+        || ((paramName === "tension" || paramName === "smallestCircleScale") && params.adaptativePointsPerCircle.value))
+    {
+        seedParam = { pointsInterval: true, pointsHeight: true };
+    } else if (paramName === "iterations") {
+        seedParam = { pointsInterval: true, pointsHeight: true, circlesRotation: true };
+    }
 
     requestAnimationFrame(() => {
-
-        let seedParam;
-
-        if (param === "pointsPerCircle"
-            || param === "adaptativePointsPerCircle"
-            || ((param === "tension" || param === "smallestCircleScale") && params.adaptativePointsPerCircle.value))
-        {
-            seedParam = { pointsInterval: true, pointsHeight: true };
-        } else if (param === "iterations") {
-            seedParam = { pointsInterval: true, pointsHeight: true, circlesRotation: true };
-        }
-
         draw(params, seedParam);
     });
 };
@@ -31,6 +90,8 @@ const generateUI = function (params) {
     for (let param in params) {
 
         let current = params[param];
+
+        current.paramName = param;
     
         if (current.hasOwnProperty('initial')) current.value = current.initial;
     
@@ -72,7 +133,6 @@ const generateUI = function (params) {
             });
     
             elt.addEventListener('input', inputHandler);
-            elt.setAttribute('data-var', param);
     
         } else {
     
@@ -88,8 +148,9 @@ const generateUI = function (params) {
             elt.value = current.inputValue;
     
             elt.addEventListener('input', inputHandler);
-            elt.setAttribute('data-var', param);
         }
+
+        elt.setAttribute('data-var', param);
     
         if (current.hasOwnProperty("label")) {
             let fieldsetLabel = document.createElement("fieldset");
@@ -103,6 +164,12 @@ const generateUI = function (params) {
         fieldset.append(elt);
     
         _.paramsWindow.append(fieldset);
+    }
+
+    for (let param in params) {
+
+        disableInputsAccordingToSelectedValues(params, param);
+
     }
 };
 
