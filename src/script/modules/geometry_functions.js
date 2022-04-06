@@ -4,10 +4,22 @@ const dist = function (p1, p2) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2))
 }
 
+const getValueFromEase = function (i, power, step, min, max) {
+
+    let ease;
+
+    if (power < 0) {
+        ease = 1 - Math.pow(1 - (i * step), power * -1)
+    } else {
+        ease = Math.pow(i * step, power);
+    }
+
+    return Math.round((min + (ease * (max - min))) * 1000) / 1000;
+}
+
 const offsetPointOnAxis = function (pRef1, pRef2, pTarget, offset = 0, useYasInput = false) {
     
-    let na = pRef1.x > pRef2.x ? pRef1.x - pRef2.x : pRef2.x - pRef1.x;
-    na = na === 0 ? 1 : na;
+    let na = Math.max(pRef1.x > pRef2.x ? pRef1.x - pRef2.x : pRef2.x - pRef1.x, 1);
     let c = pRef1.x > pRef2.x ? pRef1.y - pRef2.y : pRef2.y - pRef1.y;
     let a = c / na;
     let b = pRef1.y - a * pRef1.x;
@@ -67,30 +79,47 @@ const getControlPoints = function (pBefore, pCurrent, pAfter, distFromCurrentFac
 
 }
 
-const getPoints = function (radius, pointsNumber, randomPointsInterval, randomPointsHeight, circlesRotationVariation, params) {
+const getPoints = function (radius, pointsNumber, randomPointsInterval, randomPointsHeight, randomCirclesRotation, currentCircleIteration, params) {
 
     if (params.adaptativePointsPerCircle.value && pointsNumber !== randomPointsInterval.length) {
         pointsNumber = randomPointsInterval.length;
     }
     
-    let step = 360 / pointsNumber;
+    let pointStep = 360 / pointsNumber;
+    let circleStep = 1 / params.iterations.value;
 
     let originFromCenter = (params.biggestCircleScale.value / 2 - radius) * params.distanceFromCenter.value;
     let originX = _.canvas.width / 2 + (originFromCenter * Math.cos(params.originRotate.value * Math.PI / 180));
     let originY = _.canvas.height / 2 + (originFromCenter * Math.sin(params.originRotate.value * Math.PI / 180));
 
-    let points = [], pointsWithCp = [];
+    let points = [], pointsWithCp = [], linkPointsIntervalRandomizationFactorToEaseFactor = 1, linkPointsHeightRandomizationFactorToEaseFactor = 1;
+
+    let rotationVariation = randomCirclesRotation ? randomCirclesRotation : 0;
+
+    if (params.circlesRotationVariationType.value === "progression") {
+        rotationVariation = Math.round(currentCircleIteration / (params.iterations.value - 1) * 100) / 100;
+    }
+
+    if (params.linkPointsIntervalRandomizationFactorToEase.value) {
+
+        linkPointsIntervalRandomizationFactorToEaseFactor = getValueFromEase(currentCircleIteration, params.pointsIntervalRandomizationEase.value, circleStep, params.pointsIntervalRandomizationMinFactor.value, params.pointsIntervalRandomizationMaxFactor.value);
+    }
+
+    if (params.linkPointsHeightRandomizationFactorToEase.value) {
+
+        linkPointsHeightRandomizationFactorToEaseFactor = getValueFromEase(currentCircleIteration, params.pointsHeightRandomizationEase.value, circleStep, params.pointsHeightRandomizationMinFactor.value, params.pointsHeightRandomizationMaxFactor.value);
+    }
 
     for (let i = 0; i < pointsNumber; i++){
 
-        let rotateOffset = (params.randomizePointsInterval.value ? step / 2 * (randomPointsInterval ? randomPointsInterval[i] : 0) * params.pointsIntervalRandomizationFactor.value : 0) + (params.circlesRotationVariationType.value ? 360 * (circlesRotationVariation ? circlesRotationVariation : 0) * params.circlesRotationVariationFactor.value : 0);
+        let rotateOffset = (params.randomizePointsInterval.value ? pointStep / 2 * (randomPointsInterval ? randomPointsInterval[i] : 0) * params.pointsIntervalRandomizationFactor.value * linkPointsIntervalRandomizationFactorToEaseFactor : 0) + (params.circlesRotationVariationType.value ? 360 * rotationVariation * params.circlesRotationVariationFactor.value : 0);
         
-        let distOffset = params.randomizePointsHeight.value ? (randomPointsHeight ? randomPointsHeight[i] : 0) * radius * params.pointsHeightRandomizationFactor.value : 0;
+        let distOffset = params.randomizePointsHeight.value ? (randomPointsHeight ? randomPointsHeight[i] : 0) * radius * params.pointsHeightRandomizationFactor.value * linkPointsHeightRandomizationFactorToEaseFactor : 0;
 
-        let x = originX + (radius + distOffset) * Math.cos((i * step + rotateOffset) * Math.PI / 180);
-        let y = originY + (radius + distOffset) * Math.sin((i * step + rotateOffset) * Math.PI / 180);
+        let x = originX + (radius + distOffset) * Math.cos((i * pointStep + rotateOffset) * Math.PI / 180);
+        let y = originY + (radius + distOffset) * Math.sin((i * pointStep + rotateOffset) * Math.PI / 180);
 
-        points.push({ x: x, y: y, angle: i * step });
+        points.push({ x: x, y: y, angle: i * pointStep });
         
     }
 
@@ -116,15 +145,7 @@ const getCirclesRadius = function (params) {
 
     for (let i = 0; i < number; i++){
 
-        let ease;
-
-        if (params.tension.value < 0) {
-            ease = 1 - Math.pow(1 - (i * step), params.tension.value * -1)
-        } else {
-            ease = Math.pow(i * step, params.tension.value);
-        }
-
-        radius.push(Math.round((params.smallestCircleScale.value + (ease * (params.biggestCircleScale.value - params.smallestCircleScale.value))) * 1000) / 2000);
+        radius.push(getValueFromEase(i, params.circleSpacingEase.value, step, params.smallestCircleScale.value / 2, params.biggestCircleScale.value / 2));
     }
 
     return radius;
@@ -154,4 +175,4 @@ const getPointsNumber = function (params, circleRadius) {
     return arr;
 }
 
-export { dist, offsetPointOnAxis, getControlPoints, getPoints, getCirclesRadius, getPointsNumber };
+export { dist, offsetPointOnAxis, getControlPoints, getPoints, getCirclesRadius, getPointsNumber, getValueFromEase };

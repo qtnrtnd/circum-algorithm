@@ -3,6 +3,23 @@ import { camelCaseToSpan } from "./utils";
 import { params } from "./parameters";
 import { draw } from "./draw";
 
+let currentKey = null;
+let fired = false;
+
+document.addEventListener('keydown', (e) => {
+
+    if (!fired) {
+        currentKey = e.key;
+        fired = true;
+    }
+    
+});
+
+document.addEventListener('keyup', () => {
+    currentKey = null;
+    fired = false;
+});
+
 const disableInputsAccordingToSelectedValues = function (params, inputParamName) {
 
     const inputParam = params[inputParamName];
@@ -62,11 +79,36 @@ const disableInputsAccordingToSelectedValues = function (params, inputParamName)
 
 const inputHandler = function (e) {
 
-    let paramName = e.target.getAttribute("data-var");
+    const target = e.target;
+    let paramName = target.getAttribute("data-var");
     let param = params[paramName];
-    let newValue = e.target.value;
+    let newValue = target.value;
 
-    param.value = newValue;
+    if (target.type === "range" && param.hasOwnProperty('stepValues') && currentKey !== "Control") {
+
+        let value = (newValue + Math.abs(target.min)) * 10 / (target.max + Math.abs(target.min));
+        
+        let found = false;
+        let i = 0;
+
+        while (i < param.stepValues.length && !found) {
+
+            let stepValue = (param.stepValues[i] + Math.abs(target.min)) * 10 / (target.max + Math.abs(target.min));
+
+            if (value > stepValue - 0.022 && value < stepValue + 0.022) {
+                param.value = target.value = param.stepValues[i];
+                found = true;
+            }
+
+            i++;
+
+        }
+
+        if(!found) param.value = newValue;
+
+    } else {
+        param.value = newValue;
+    }
 
     disableInputsAccordingToSelectedValues(params, paramName);
 
@@ -74,7 +116,7 @@ const inputHandler = function (e) {
 
     if (paramName === "pointsPerCircle"
         || paramName === "adaptativePointsPerCircle"
-        || ((paramName === "tension" || paramName === "smallestCircleScale") && params.adaptativePointsPerCircle.value))
+        || ((paramName === "circleSpacingEase" || paramName === "smallestCircleScale") && params.adaptativePointsPerCircle.value))
     {
         seedParam = { pointsInterval: true, pointsHeight: true };
     } else if (paramName === "iterations") {
@@ -123,6 +165,7 @@ const generateUI = function (params) {
             elt = document.createElement('button');
             elt.innerHTML = current.text;
             elt.addEventListener('click', current.onClick);
+            elt.setAttribute('data-var', param);
             
         } else if (current.type === "select") {
     
@@ -133,6 +176,7 @@ const generateUI = function (params) {
             });
     
             elt.addEventListener('input', inputHandler);
+            elt.setAttribute('data-var', param);
     
         } else {
     
@@ -148,10 +192,18 @@ const generateUI = function (params) {
             elt.value = current.inputValue;
     
             elt.addEventListener('input', inputHandler);
+            elt.setAttribute('data-var', param);
+
+            let container = document.createElement('div');
+            container.classList.add('input-container');
+
+            if (elt.type === "range") container.classList.add('range');
+            else if (elt.type === "number") container.classList.add('number');
+
+            container.append(elt);
+            elt = container;
         }
 
-        elt.setAttribute('data-var', param);
-    
         if (current.hasOwnProperty("label")) {
             let fieldsetLabel = document.createElement("fieldset");
             let label = document.createElement('legend');
@@ -162,8 +214,8 @@ const generateUI = function (params) {
         }
     
         fieldset.append(elt);
-    
         _.paramsWindow.append(fieldset);
+
     }
 
     for (let param in params) {
