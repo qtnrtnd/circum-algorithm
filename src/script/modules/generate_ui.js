@@ -177,7 +177,7 @@ const generateUI = function (params) {
 
                 if (that.hasOwnProperty('onUpdate')) {
 
-                    let res = that.onUpdate(v);
+                    let res = that.onUpdate(v, that.value);
                     if (res) that.value = res;
                     else that.value = v;
 

@@ -411,7 +411,20 @@ params = {
             {value: "out", text: "out"},
             {value: false, text: "none", selected: true},
         ],
-        initial: false
+        initial: false,
+        onUpdate: function (inputValue, oldValue) {
+            if ((inputValue === "out" && oldValue !== "out") || (inputValue !== "out" && oldValue === "out")) {
+                if (params.pointsIntervalRandomizationSeed.value) {
+                    params.pointsIntervalRandomizationSeed.setValue(params.pointsIntervalRandomizationSeed.value.reverse());
+                }
+                if (params.pointsHeightRandomizationSeed.value) {
+                    params.pointsHeightRandomizationSeed.setValue(params.pointsHeightRandomizationSeed.value.reverse());
+                }
+                if (params.circlesRotationRandomizationSeed.value) {
+                    params.circlesRotationRandomizationSeed.setValue(params.circlesRotationRandomizationSeed.value.reverse());
+                }
+            }
+        }
     },
     alphaBackground: {
         type: "select",

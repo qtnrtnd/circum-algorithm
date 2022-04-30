@@ -97,6 +97,9 @@ const getPoints = function (radius, pointsNumber, randomPointsInterval, randomPo
     let rotationVariation = randomCirclesRotation ? randomCirclesRotation : 0;
 
     if (params.circlesRotationVariationType.value === "progression") {
+        
+        if (params.clipCircles.value === "out") currentCircleIteration = (params.iterations.value - 1) - currentCircleIteration;
+
         rotationVariation = Math.round(currentCircleIteration / (params.iterations.value - 1) * 100) / 100;
     }
 

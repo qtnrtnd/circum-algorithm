@@ -51,8 +51,6 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
 
     circlesRadius.forEach((circleRadius, i) => {
 
-        //_.ctx.save();
-
         let lineWidth = params.strokeWidth.value;
 
         let ease = Math.max(getValueFromEase(i, params.strokeWidthEase.value, 1 / (params.iterations.value - 1), params.strokeWidthMinFactor.value, params.strokeWidthMaxFactor.value), 10e-4);
@@ -64,8 +62,6 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
         let points = getPoints(circleRadius, pointsPerCircle[i], params.pointsIntervalRandomizationSeed.value[i], params.pointsHeightRandomizationSeed.value[i], params.circlesRotationRandomizationSeed.value[i], i, params);
 
         let path = new Path2D();
-
-        //_.ctx.beginPath();
         
         points.forEach((point, i) => {
 
