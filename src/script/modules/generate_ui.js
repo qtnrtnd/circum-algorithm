@@ -96,7 +96,8 @@ const inputHandler = function (e) {
             let stepValue = (param.stepValues[i] + Math.abs(target.min)) * 10 / (target.max + Math.abs(target.min));
 
             if (value > stepValue - 0.022 && value < stepValue + 0.022) {
-                param.value = target.value = param.stepValues[i];
+                target.value = param.stepValues[i];
+                param.setValue(param.stepValues[i]);
                 found = true;
             }
 
@@ -104,10 +105,10 @@ const inputHandler = function (e) {
 
         }
 
-        if(!found) param.value = newValue;
+        if(!found) param.setValue(newValue);
 
     } else {
-        param.value = newValue;
+        param.setValue(newValue);
     }
 
     disableInputsAccordingToSelectedValues(params, paramName);
@@ -133,9 +134,72 @@ const generateUI = function (params) {
 
         let current = params[param];
 
+        // On ajoute une méthode setter pour valider les données des inputs à chaque changement de valeur et faire les modifications nécessaires si la méthode "onUpdate" est spécifiée:
+
+        Object.assign(current, {
+            setValue: function(v) {
+
+                const that = current;
+
+                if (that.hasOwnProperty('type') && that.type === "number" || that.type === "range") {
+
+                    if (isNaN(v)) v = that.initial;
+                    else {
+                        if (that.hasOwnProperty('max')) v = Math.min(v, (that.max));
+                        if (that.hasOwnProperty('min')) v = Math.max(v, (that.min));
+                    }
+                    
+                } else if (that.hasOwnProperty('type') && that.type === "select" && that.hasOwnProperty('listOfValues')) {
+
+                    try {
+                        v = JSON.parse(v);
+                    } catch { }
+
+                    let found = false;
+                    let defaultIndex = 0;
+                    let i = 0;
+
+                    while (!found && i < that.listOfValues.length) {
+                        if (that.listOfValues[i].value === v) {
+                            found = true;
+                        } else {
+                            if (that.listOfValues[i].hasOwnProperty('selected') && that.listOfValues[i].selected === true) defaultIndex = i;
+                            i++;
+                        }
+                    }
+
+                    if (!found) {
+                        v = that.listOfValues[defaultIndex].value;
+                    }
+                }
+
+                that.inputValue = v;
+
+                if (that.hasOwnProperty('onUpdate')) {
+
+                    let res = that.onUpdate(v);
+                    if (res) that.value = res;
+                    else that.value = v;
+
+                } else that.value = v;
+
+                if (that.hasOwnProperty('influences')) {
+                    that.influences.forEach(influence => {
+
+                        let param = params[influence];
+                        if (param.inputValue) param.setValue(param.inputValue);
+
+                    });
+                }
+                
+            }
+        });
+
+        // Génération du code HTML du formulaire :
+
         current.paramName = param;
     
-        if (current.hasOwnProperty('initial')) current.value = current.initial;
+        if (current.hasOwnProperty('initial')) current.setValue(current.initial);
     
         let fieldset, elt;
     

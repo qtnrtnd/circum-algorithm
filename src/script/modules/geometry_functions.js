@@ -145,7 +145,13 @@ const getCirclesRadius = function (params) {
 
     for (let i = 0; i < number; i++){
 
-        radius.push(getValueFromEase(i, params.circleSpacingEase.value, step, params.smallestCircleScale.value / 2, params.biggestCircleScale.value / 2));
+        let value = getValueFromEase(i, params.circleSpacingEase.value, step, params.smallestCircleScale.value / 2, params.biggestCircleScale.value / 2);
+
+        if (params.clipCircles.value === "out") {
+            radius.unshift(value);
+        } else {
+            radius.push(value);
+        }
     }
 
     return radius;

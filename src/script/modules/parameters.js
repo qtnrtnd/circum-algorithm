@@ -4,14 +4,6 @@ import { draw } from "./draw";
 let params;
 const MAX_EASE_POWER = 10;
 
-const forceRecompute = function (paramName) {
-
-    let param = params[paramName];
-
-    if (param.inputValue) param.value = param.inputValue;
-
-}
-
 params = {
     resolution: {
         group: "downloadImage",
@@ -20,15 +12,9 @@ params = {
         initial: window.innerHeight,
         min: 1,
         max: 6000,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            let value = Math.max(Math.min(v, this.max), this.min);
-            this.computedValue = this.inputValue = _.canvas.width = _.canvas.height = value;
-
-            forceRecompute("biggestCircleScale");
-            forceRecompute("strokeWidth");
+        influences: ["biggestCircleScale", "strokeWidth"],
+        onUpdate: function (inputValue) {
+            _.canvas.width = _.canvas.height = inputValue;
         }
     },
     biggestCircleScale: {
@@ -37,15 +23,10 @@ params = {
         min: 0,
         max: 2,
         step: 0.001,
-        stepValues: [0.25, 1/3, 0.5, 2/3, 0.75, 1],
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            let value = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-            this.computedValue = value * params.resolution.value;
-
-            forceRecompute("smallestCircleScale");
+        stepValues: [0.25, 1 / 3, 0.5, 2 / 3, 0.75, 1],
+        influences: ["smallestCircleScale"],
+        onUpdate: function (inputValue) {
+            return inputValue * params.resolution.value;
         }
     },
     smallestCircleScale: {
@@ -54,13 +35,9 @@ params = {
         min: 0,
         max: 1,
         step: 0.001,
-        stepValues: [0.25, 1/3, 0.5, 2/3, 0.75],
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            let value = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-            this.computedValue = value * params.biggestCircleScale.value;
+        stepValues: [0.25, 1 / 3, 0.5, 2 / 3, 0.75],
+        onUpdate: function (inputValue) {
+            return inputValue * params.biggestCircleScale.value;
         }
     },
     originRotate: {
@@ -71,13 +48,7 @@ params = {
         min: 0,
         max: 360,
         step: 0.001,
-        stepValues: [45, 90, 135, 180, 225, 270, 315],
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        stepValues: [45, 90, 135, 180, 225, 270, 315]
     },
     distanceFromCenter: {
         group: "origin",
@@ -86,25 +57,13 @@ params = {
         initial: 1,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     iterations: {
         type: "number",
         initial: 20,
         min: 1,
-        step: 1,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(v, this.min);
-        }
+        step: 1
     },
     circleSpacingEase: {
         group: "circleSpacing",
@@ -115,21 +74,16 @@ params = {
         max: 1,
         step: 0.001,
         stepValues: [0.5],
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
+        onUpdate: function (inputValue) {
+            let computedValue;
 
-            let value = Math.max(Math.min(v, this.max), this.min);
-            this.inputValue = value;
-
-            if (value < 0.5) {
-                value = (1 + ((0.5 - value) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
+            if (inputValue < 0.5) {
+                computedValue = inputValue = (1 + ((0.5 - inputValue) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
             } else {
-                value = 1 + ((value-0.5) / 0.5) * (MAX_EASE_POWER - 1)
+                computedValue = inputValue = 1 + ((inputValue-0.5) / 0.5) * (MAX_EASE_POWER - 1)
             }
 
-            this.computedValue = value;
+            return computedValue;
         }
     },
     pointsPerCircle: {
@@ -137,13 +91,7 @@ params = {
         type: "number",
         initial: 20,
         min: 4,
-        step: 1,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(v, this.min);
-        }
+        step: 1
     },
     adaptativePointsPerCircle: {
         group: "pointsPerCircle",
@@ -153,35 +101,14 @@ params = {
             {value: true, text: "true"},
             {value: false, text: "false", selected: true},
         ],
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     smoothness: {
         type: "range",
         initial: 0,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     randomizePointsInterval: {
         group: "randomizePointsInterval",
@@ -194,22 +121,7 @@ params = {
             "false": "*"
             
         },
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     pointsIntervalRandomizationFactor: {
         group: "randomizePointsInterval",
@@ -218,25 +130,13 @@ params = {
         initial: 1,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     pointsIntervalRandomizationSeed: {
         group: "randomizePointsInterval",
         type: "button",
         text: "seed",
         initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = v;
-        },
         onClick: function () {
      
             requestAnimationFrame(() => {
@@ -258,24 +158,8 @@ params = {
                 "pointsIntervalRandomizationMinFactor",
                 "pointsIntervalRandomizationMaxFactor"
             ]
-            
         },
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     pointsIntervalRandomizationEase: {
         group: "randomizePointsInterval",
@@ -286,21 +170,16 @@ params = {
         max: 1,
         step: 0.001,
         stepValues: [0.5],
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
+        onUpdate: function (inputValue) {
+            let computedValue;
 
-            let value = Math.max(Math.min(v, this.max), this.min);
-            this.inputValue = value;
-
-            if (value < 0.5) {
-                value = (1 + ((0.5 - value) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
+            if (inputValue < 0.5) {
+                computedValue = inputValue = (1 + ((0.5 - inputValue) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
             } else {
-                value = 1 + ((value-0.5) / 0.5) * (MAX_EASE_POWER - 1)
+                computedValue = inputValue = 1 + ((inputValue-0.5) / 0.5) * (MAX_EASE_POWER - 1)
             }
 
-            this.computedValue = value;
+            return computedValue;
         }
     },
     pointsIntervalRandomizationMinFactor: {
@@ -310,13 +189,7 @@ params = {
         initial: 0,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     pointsIntervalRandomizationMaxFactor: {
         group: "randomizePointsInterval",
@@ -325,13 +198,7 @@ params = {
         initial: 1,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     randomizePointsHeight: {
         group: "randomizePointsHeight",
@@ -343,22 +210,7 @@ params = {
         disableInputsForValue: {
             "false": "*"
         },
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     pointsHeightRandomizationFactor: {
         group: "randomizePointsHeight",
@@ -367,25 +219,13 @@ params = {
         initial: 1,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     pointsHeightRandomizationSeed: {
         group: "randomizePointsHeight",
         type: "button",
         text: "seed",
         initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = v;
-        },
         onClick: function () {
      
             requestAnimationFrame(() => {
@@ -409,22 +249,7 @@ params = {
             ]
             
         },
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     pointsHeightRandomizationEase: {
         group: "randomizePointsHeight",
@@ -435,21 +260,16 @@ params = {
         max: 1,
         step: 0.001,
         stepValues: [0.5],
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
+        onUpdate: function (inputValue) {
+            let computedValue;
 
-            let value = Math.max(Math.min(v, this.max), this.min);
-            this.inputValue = value;
-
-            if (value < 0.5) {
-                value = (1 + ((0.5 - value) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
+            if (inputValue < 0.5) {
+                computedValue = inputValue = (1 + ((0.5 - inputValue) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
             } else {
-                value = 1 + ((value-0.5) / 0.5) * (MAX_EASE_POWER - 1)
+                computedValue = inputValue = 1 + ((inputValue-0.5) / 0.5) * (MAX_EASE_POWER - 1)
             }
 
-            this.computedValue = value;
+            return computedValue;
         }
     },
     pointsHeightRandomizationMinFactor: {
@@ -459,13 +279,7 @@ params = {
         initial: 0,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     pointsHeightRandomizationMaxFactor: {
         group: "randomizePointsHeight",
@@ -474,13 +288,7 @@ params = {
         initial: 1,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     circlesRotationVariationType: {
         group: "circlesRotationVariation",
@@ -498,22 +306,8 @@ params = {
             ]
         },
         initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-
-            if (value) {
+        onUpdate: function (inputValue) {
+            if (inputValue) {
                 requestAnimationFrame(() => {
                     draw(params, {circlesRotation: true});
                 });
@@ -527,25 +321,13 @@ params = {
         initial: 0.5,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     circlesRotationRandomizationSeed: {
         group: "circlesRotationVariation",
         type: "button",
         text: "seed",
         initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = v;
-        },
         onClick: function () {
      
             requestAnimationFrame(() => {
@@ -560,12 +342,8 @@ params = {
         max: 100,
         min: 0,
         step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            let value = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-            this.computedValue = (params.resolution.value * value) / 2048;
+        onUpdate: function (inputValue) {
+            return (params.resolution.value * inputValue) / 2048
         }
     },
     linkStrokeWidthToEase: {
@@ -584,22 +362,7 @@ params = {
             ]
             
         },
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     strokeWidthEase: {
         group: "strokeWidth",
@@ -610,21 +373,16 @@ params = {
         max: 1,
         step: 0.001,
         stepValues: [0.5],
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
+        onUpdate: function (inputValue) {
+            let computedValue;
 
-            let value = Math.max(Math.min(v, this.max), this.min);
-            this.inputValue = value;
-
-            if (value < 0.5) {
-                value = (1 + ((0.5 - value) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
+            if (inputValue < 0.5) {
+                computedValue = inputValue = (1 + ((0.5 - inputValue) / 0.5) * (MAX_EASE_POWER - 1)) * -1;
             } else {
-                value = 1 + ((value-0.5) / 0.5) * (MAX_EASE_POWER - 1)
+                computedValue = inputValue = 1 + ((inputValue-0.5) / 0.5) * (MAX_EASE_POWER - 1)
             }
 
-            this.computedValue = value;
+            return computedValue;
         }
     },
     strokeWidthMinFactor: {
@@ -634,13 +392,7 @@ params = {
         initial: 0,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     strokeWidthMaxFactor: {
         group: "strokeWidth",
@@ -649,13 +401,7 @@ params = {
         initial: 1,
         min: 0,
         max: 1,
-        step: 0.001,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-            this.computedValue = this.inputValue = Math.max(Math.min(v, this.max), this.min);
-        }
+        step: 0.001
     },
     clipCircles: {
         type: "select",
@@ -665,22 +411,7 @@ params = {
             {value: "out", text: "out"},
             {value: false, text: "none", selected: true},
         ],
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     alphaBackground: {
         type: "select",
@@ -688,22 +419,7 @@ params = {
             {value: true, text: "true"},
             {value: false, text: "false", selected: true},
         ],
-        initial: false,
-        get value() {
-            return this.computedValue;
-        },
-        set value(v) {
-
-            let value;
-
-            try {
-                value = JSON.parse(v);
-            } catch {
-                value = v;
-            }
-
-            this.computedValue = this.inputValue = value;
-        }
+        initial: false
     },
     downloadImage: {
         group: "downloadImage",

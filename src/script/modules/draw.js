@@ -5,11 +5,6 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
 
     _.ctx.clearRect(0, 0, params.resolution.value, params.resolution.value);
 
-    if (!params.alphaBackground.value) {
-        _.ctx.fillStyle = "white";
-        _.ctx.fillRect(0, 0, _.canvas.width, _.canvas.height);
-    }
-
     const circlesRadius = getCirclesRadius(params);
 
     const pointsPerCircle = getPointsNumber(params, circlesRadius);
@@ -24,7 +19,7 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
             arr.push(Array.apply(null, Array(pointsPerCircle[i])).map(() => -1 + 2 * Math.random()))
         }
 
-        params.pointsIntervalRandomizationSeed.value = arr;
+        params.pointsIntervalRandomizationSeed.setValue(arr);
     }
 
     let newRandomPointsHeight = generateNewSeed.pointsHeight || (params.randomizePointsHeight.value && !params.pointsHeightRandomizationSeed.value);
@@ -37,7 +32,7 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
             arr.push(Array.apply(null, Array(pointsPerCircle[i])).map(() => -1 + 2 * Math.random()))
         }
 
-        params.pointsHeightRandomizationSeed.value = arr;
+        params.pointsHeightRandomizationSeed.setValue(arr);
     }
 
     let newRandomCirclesRotation = generateNewSeed.circlesRotation || (params.circlesRotationVariationType.value === "randomization" && !params.circlesRotationRandomizationSeed.value);
@@ -50,11 +45,13 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
             arr.push(Math.random());
         }
 
-        params.circlesRotationRandomizationSeed.value = arr;
+        params.circlesRotationRandomizationSeed.setValue(arr);
 
     }
 
     circlesRadius.forEach((circleRadius, i) => {
+
+        //_.ctx.save();
 
         let lineWidth = params.strokeWidth.value;
 
@@ -66,35 +63,48 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
 
         let points = getPoints(circleRadius, pointsPerCircle[i], params.pointsIntervalRandomizationSeed.value[i], params.pointsHeightRandomizationSeed.value[i], params.circlesRotationRandomizationSeed.value[i], i, params);
 
-        _.ctx.beginPath();
+        let path = new Path2D();
+
+        //_.ctx.beginPath();
         
         points.forEach((point, i) => {
 
-            if (i === 0) _.ctx.moveTo(point.x, point.y);
+            if (i === 0) path.moveTo(point.x, point.y);
 
             if (params.smoothness.value === 0) {
                 
-                _.ctx.lineTo(point.x, point.y);
+                path.lineTo(point.x, point.y);
                 
             } else if (i > 0) {
 
                 let cpStart = points[i - 1].cpr;
                 let cpEnd = point.cpl;
 
-                _.ctx.bezierCurveTo(cpStart.x, cpStart.y, cpEnd.x, cpEnd.y, point.x, point.y);
+                path.bezierCurveTo(cpStart.x, cpStart.y, cpEnd.x, cpEnd.y, point.x, point.y);
             }
         });
 
         if (params.smoothness.value > 0) {
-            _.ctx.bezierCurveTo(points[points.length - 1].cpr.x, points[points.length - 1].cpr.y, points[0].cpl.x, points[0].cpl.y, points[0].x, points[0].y);
+            path.bezierCurveTo(points[points.length - 1].cpr.x, points[points.length - 1].cpr.y, points[0].cpl.x, points[0].cpl.y, points[0].x, points[0].y);
         } else {
-            _.ctx.closePath();
+            path.closePath();
         }
-        //_.ctx.fillStyle = "white";
-        //_.ctx.fill();
-        _.ctx.stroke();
 
-        //if (params.clipCircles.value === "in") _.ctx.globalCompositeOperation = "destination-atop";
+        if (params.clipCircles.value === "in") {
+
+            _.ctx.globalCompositeOperation = "destination-in";
+            _.ctx.fill(path);
+            _.ctx.globalCompositeOperation = "source-over";
+
+        } else if (params.clipCircles.value === "out") {
+
+            _.ctx.globalCompositeOperation = "destination-out";
+            _.ctx.fill(path);
+            _.ctx.globalCompositeOperation = "source-over";
+            
+        }
+
+        _.ctx.stroke(path);
 
         /*points.forEach((point, i) => {
 
@@ -121,7 +131,14 @@ const draw = function (params, generateNewSeed = { pointsInterval: false, points
             
             
         })*/
-    })
+    });
+
+    if (!params.alphaBackground.value) {
+        _.ctx.globalCompositeOperation = "destination-over";
+        _.ctx.fillStyle = "white";
+        _.ctx.fillRect(0, 0, _.canvas.width, _.canvas.height);
+        _.ctx.globalCompositeOperation = "source-over";
+    }
     
 };
 
